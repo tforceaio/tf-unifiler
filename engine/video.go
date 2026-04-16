@@ -31,7 +31,7 @@ import (
 	"github.com/tforceaio/tf-unifiler-go/config"
 	"github.com/tforceaio/tf-unifiler-go/filesys"
 	"github.com/tforceaio/tf-unifiler-go/filesys/exec"
-	"github.com/tforceaio/tf-unifiler-go/x/nullable"
+	"github.com/tforceaio/tf-unifiler-go/internal/nullable"
 )
 
 // VideoModule handles user requests related to batch processing of video files.
