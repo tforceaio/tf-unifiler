@@ -23,14 +23,79 @@ import (
 	"github.com/tforceaio/tf-unifiler-go/xlib"
 )
 
+func TestParseMd5Error(t *testing.T) {
+	var tests = []struct {
+		name    string
+		content string
+		err     string
+	}{
+		{"wrong hash size (too short)", "ca47868bca0d531a275f20e99eb04b go.mod", "invalid MD5 hash 'ca47868bca0d531a275f20e99eb04b'"},
+		{"wrong hash size (too long)", "ca47868bca0d531a275f20e99eb04ba100 go.mod", "invalid MD5 hash 'ca47868bca0d531a275f20e99eb04ba100'"},
+		{"invalid character", "ca47868bca0d531a275f20e99eb04bXY go.mod", "invalid MD5 hash 'ca47868bca0d531a275f20e99eb04bXY'"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseMd5(strings.NewReader(tt.content))
+			errs := xlib.ErrString(err)
+			if errs != tt.err {
+				t.Errorf("wrong error. Expected %q. Actual %q.", tt.err, errs)
+			}
+		})
+	}
+}
+
+func TestParseSha1Error(t *testing.T) {
+	var tests = []struct {
+		name    string
+		content string
+		err     string
+	}{
+		{"wrong hash size (too short)", "b91806c5f58c62d69dda437d20ee86eed0044f go.mod", "invalid SHA-1 hash 'b91806c5f58c62d69dda437d20ee86eed0044f'"},
+		{"wrong hash size (too long)", "b91806c5f58c62d69dda437d20ee86eed0044f50b7 go.mod", "invalid SHA-1 hash 'b91806c5f58c62d69dda437d20ee86eed0044f50b7'"},
+		{"invalid character", "b91806c5f58c62d69dda437d20ee86eed0044fXY go.mod", "invalid SHA-1 hash 'b91806c5f58c62d69dda437d20ee86eed0044fXY'"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseSha1(strings.NewReader(tt.content))
+			errs := xlib.ErrString(err)
+			if errs != tt.err {
+				t.Errorf("wrong error. Expected %q. Actual %q.", tt.err, errs)
+			}
+		})
+	}
+}
+
+func TestParseSha512Error(t *testing.T) {
+	var tests = []struct {
+		name    string
+		content string
+		err     string
+	}{
+		{"wrong hash size (sha256 length)", "b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bca go.mod", "invalid SHA-512 hash 'b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bca'"},
+		{"invalid character", "b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bcab91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bXY go.mod", "invalid SHA-512 hash 'b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bcab91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bXY'"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseSha512(strings.NewReader(tt.content))
+			errs := xlib.ErrString(err)
+			if errs != tt.err {
+				t.Errorf("wrong error. Expected %q. Actual %q.", tt.err, errs)
+			}
+		})
+	}
+}
+
 func TestParseSha256Error(t *testing.T) {
 	var tests = []struct {
 		name    string
 		content string
 		err     string
 	}{
-		{"wrong hash size", "ca47868bca0d531a275f20e99eb04ba1 go.mod", "invalid SHA-256 hash 'ca47868bca0d531a275f20e99eb04ba1'"},
-		{"wrong hash size", "eb3ff11bb7ec6a6cfc5f0ffb391af473628a443b95f5188d9b147ed9bd9862b36d8c22d796b185d16422b7be9663b4a9b9f68f6dfda1f189c9b8343492acb2a3 go.mod", "invalid SHA-256 hash 'eb3ff11bb7ec6a6cfc5f0ffb391af473628a443b95f5188d9b147ed9bd9862b36d8c22d796b185d16422b7be9663b4a9b9f68f6dfda1f189c9b8343492acb2a3'"},
+		{"wrong hash size (too short)", "ca47868bca0d531a275f20e99eb04ba1 go.mod", "invalid SHA-256 hash 'ca47868bca0d531a275f20e99eb04ba1'"},
+		{"wrong hash size (too long)", "eb3ff11bb7ec6a6cfc5f0ffb391af473628a443b95f5188d9b147ed9bd9862b36d8c22d796b185d16422b7be9663b4a9b9f68f6dfda1f189c9b8343492acb2a3 go.mod", "invalid SHA-256 hash 'eb3ff11bb7ec6a6cfc5f0ffb391af473628a443b95f5188d9b147ed9bd9862b36d8c22d796b185d16422b7be9663b4a9b9f68f6dfda1f189c9b8343492acb2a3'"},
 		{"space in hash", "b91806c5f58c62d69dda437d20ee 86eed0044f50b780a7795d5014ed04ad1bca go.mod", "invalid SHA-256 hash 'b91806c5f58c62d69dda437d20ee'"},
 		{"invalid character", "b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bXY go.mod", "invalid SHA-256 hash 'b91806c5f58c62d69dda437d20ee86eed0044f50b780a7795d5014ed04ad1bXY'"},
 	}
@@ -61,7 +126,7 @@ func TestParserItemCount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := newParser(strings.NewReader(tt.content))
+			p := newChecksumParser(strings.NewReader(tt.content))
 			items, _ := p.Parse()
 			if len(items) != tt.count {
 				t.Errorf("Invalid number of items. Expected %d. Actual %d.", tt.count, len(items))
@@ -88,7 +153,7 @@ func TestParserSyntax(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := newParser(strings.NewReader(tt.content))
+			p := newChecksumParser(strings.NewReader(tt.content))
 			items, _ := p.Parse()
 			item := items[0]
 			if item.Path != tt.path {
@@ -110,33 +175,33 @@ func TestParserError(t *testing.T) {
 		content string
 		err     string
 	}{
-		{"hash only", "a3c51dd48bf7fabbbd354bd4e16b0ec1", "invalid token. expected whitespace actual '\x00'"},
-		{"hash only", "a3c51dd48bf7fabbbd354bd4e16b0ec1\n", "invalid token. expected whitespace actual '\n'"},
-		{"missing path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  ", "invalid token. expected whitespace actual '\x00'"},
-		{"missing path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  \n", "invalid token. expected whitespace actual '\n'"},
-		{"missing path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *", "invalid token. expected path actual '\x00'"},
-		{"missing path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *\n", "invalid token. expected path actual '\n'"},
-		{"path only", "go.mod", "invalid token. expected whitespace actual '\x00'"},
-		{"path only", "go.mod\n", "invalid token. expected whitespace actual '\n'"},
-		{"missing hash", " go.mod", "invalid token. expected hash actual ' '"},
-		{"path only", "*go.mod", "invalid token. expected hash actual '*'"},
-		{"path only", "*go.mod\n", "invalid token. expected hash actual '*'"},
-		{"missing hash", " *go.mod\n", "invalid token. expected hash actual ' '"},
-		{"space before path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  * go.mod", "invalid token. expected path actual ' '"},
-		{"space before path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  * go.mod\n", "invalid token. expected path actual ' '"},
-		{"space after path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *go.mod ", "invalid token. expected path actual ' '"},
-		{"space after path", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *go.mod \n", "invalid token. expected path actual ' '"},
-		{"space before hash", " a3c51dd48bf7fabbbd354bd4e16b0ec1 go.mod", "invalid token. expected hash actual ' '"},
-		{"space before hash", " a3c51dd48bf7fabbbd354bd4e16b0ec1 go.mod\n", "invalid token. expected hash actual ' '"},
-		{"space in hash", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 go.mod", ""},
-		{"space in hash", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 go.mod\n", ""},
-		{"space in hash", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 *go.mod", "invalid token. expected path actual '*'"},
-		{"space in hash", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 *go.mod\n", "invalid token. expected path actual '*'"},
+		{"hash only (no newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1", "invalid token. expected whitespace actual '\x00'"},
+		{"hash only (with newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1\n", "invalid token. expected whitespace actual '\n'"},
+		{"missing path (double space, EOF)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  ", "invalid token. expected whitespace actual '\x00'"},
+		{"missing path (double space, newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  \n", "invalid token. expected whitespace actual '\n'"},
+		{"missing path (asterisk, EOF)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *", "invalid token. expected path actual '\x00'"},
+		{"missing path (asterisk, newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *\n", "invalid token. expected path actual '\n'"},
+		{"path only (no newline)", "go.mod", "invalid token. expected whitespace actual '\x00'"},
+		{"path only (with newline)", "go.mod\n", "invalid token. expected whitespace actual '\n'"},
+		{"missing hash (leading space)", " go.mod", "invalid token. expected hash actual ' '"},
+		{"path only (asterisk, no newline)", "*go.mod", "invalid token. expected hash actual '*'"},
+		{"path only (asterisk, with newline)", "*go.mod\n", "invalid token. expected hash actual '*'"},
+		{"missing hash (leading space and asterisk)", " *go.mod\n", "invalid token. expected hash actual ' '"},
+		{"space before path (no newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  * go.mod", "invalid token. expected path actual ' '"},
+		{"space before path (with newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  * go.mod\n", "invalid token. expected path actual ' '"},
+		{"space after path (no newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *go.mod ", "invalid token. expected path actual ' '"},
+		{"space after path (with newline)", "a3c51dd48bf7fabbbd354bd4e16b0ec1  *go.mod \n", "invalid token. expected path actual ' '"},
+		{"space before hash (no newline)", " a3c51dd48bf7fabbbd354bd4e16b0ec1 go.mod", "invalid token. expected hash actual ' '"},
+		{"space before hash (with newline)", " a3c51dd48bf7fabbbd354bd4e16b0ec1 go.mod\n", "invalid token. expected hash actual ' '"},
+		{"space in hash (text mode, EOF)", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 go.mod", ""},
+		{"space in hash (text mode, newline)", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 go.mod\n", ""},
+		{"space in hash (binary mode, EOF)", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 *go.mod", "invalid token. expected path actual '*'"},
+		{"space in hash (binary mode, newline)", "a3c51dd48bf7fabbbd 354bd4e16b0ec1 *go.mod\n", "invalid token. expected path actual '*'"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := newParser(strings.NewReader(tt.content))
+			p := newChecksumParser(strings.NewReader(tt.content))
 			_, err := p.Parse()
 			errs := xlib.ErrString(err)
 			if errs != tt.err {

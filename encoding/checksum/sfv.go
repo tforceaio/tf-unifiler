@@ -19,21 +19,20 @@ package checksum
 import (
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 )
 
-type checksumParser struct {
+type sfvParser struct {
 	parserBase
 }
 
-func newChecksumParser(r io.Reader) *checksumParser {
-	p := &checksumParser{}
+func newSfvParser(r io.Reader) *sfvParser {
+	p := &sfvParser{}
 	p.s = newScanner(r)
 	return p
 }
 
-func (p *checksumParser) Parse() ([]*ChecksumItem, error) {
+func (p *sfvParser) Parse() ([]*ChecksumItem, error) {
 	items := []*ChecksumItem{}
 
 	for {
@@ -47,28 +46,26 @@ func (p *checksumParser) Parse() ([]*ChecksumItem, error) {
 				p.unscan()
 			}
 			continue
+		} else if tok == SEMICOLON {
+			for {
+				t, _ := p.scan()
+				if t == CR {
+					if next, _ := p.scan(); next != LF {
+						p.unscan()
+					}
+					break
+				} else if t == LF || t == EOF {
+					if t == EOF {
+						p.unscan()
+					}
+					break
+				}
+			}
+			continue
 		} else if tok == WORD {
-			item.Hash = lit
-		} else {
-			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "hash", lit)
-		}
-
-		if tok, lit := p.scan(); tok != SPACE {
-			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "whitespace", lit)
-		}
-
-		if tok, lit := p.scan(); tok == ASTERISK {
-			item.BinaryMode = true
-		} else if tok == WORD || tok == SPACE {
 			p.unscan()
 		} else {
-			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "whitespace", lit)
-		}
-
-		if tok, lit := p.scan(); tok == SPACE {
 			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "path", lit)
-		} else {
-			p.unscan()
 		}
 
 		pathSlice := []string{}
@@ -79,7 +76,6 @@ func (p *checksumParser) Parse() ([]*ChecksumItem, error) {
 				pathSlice = append(pathSlice, lit)
 			} else if tok == CR || tok == LF || tok == EOF {
 				p.unscan()
-				item.Path = strings.Join(pathSlice, "")
 				break
 			} else {
 				return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "path", lit)
@@ -91,6 +87,16 @@ func (p *checksumParser) Parse() ([]*ChecksumItem, error) {
 		if lastTok == SPACE {
 			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "path", " ")
 		}
+
+		item.Hash = pathSlice[len(pathSlice)-1]
+		pathSlice = pathSlice[:len(pathSlice)-1]
+		for len(pathSlice) > 0 && (pathSlice[len(pathSlice)-1] == " " || pathSlice[len(pathSlice)-1] == "\t") {
+			pathSlice = pathSlice[:len(pathSlice)-1]
+		}
+		if len(pathSlice) == 0 {
+			return nil, fmt.Errorf("invalid token. expected %s actual '%s'", "hash", "")
+		}
+		item.Path = strings.Join(pathSlice, "")
 
 		if tok, lit := p.scan(); tok == CR {
 			if tok, lit = p.scan(); tok == LF {
@@ -111,37 +117,6 @@ func (p *checksumParser) Parse() ([]*ChecksumItem, error) {
 	return items, nil
 }
 
-// Parse a md5 checksum file
-func ParseMd5(r io.Reader) ([]*ChecksumItem, error) {
-	return parseWithHashLength(newChecksumParser(r).Parse, "MD5", 32)
-}
-
-// Parse a sha1 checksum file
-func ParseSha1(r io.Reader) ([]*ChecksumItem, error) {
-	return parseWithHashLength(newChecksumParser(r).Parse, "SHA-1", 40)
-}
-
-// Parse a sha256 checksum file
-func ParseSha256(r io.Reader) ([]*ChecksumItem, error) {
-	return parseWithHashLength(newChecksumParser(r).Parse, "SHA-256", 64)
-}
-
-// Parse a sha512 checksum file
-func ParseSha512(r io.Reader) ([]*ChecksumItem, error) {
-	return parseWithHashLength(newChecksumParser(r).Parse, "SHA-512", 128)
-}
-
-func parseWithHashLength(parse func() ([]*ChecksumItem, error), algo string, length int) ([]*ChecksumItem, error) {
-	items, err := parse()
-	if err != nil {
-		return items, err
-	}
-	pattern := fmt.Sprintf("^[0-9A-Fa-f]{%d}$", length)
-	hashCheckRegex := regexp.MustCompile(pattern)
-	for _, l := range items {
-		if !hashCheckRegex.MatchString(l.Hash) {
-			return nil, fmt.Errorf("invalid %s hash '%s'", algo, l.Hash)
-		}
-	}
-	return items, nil
+func ParseCRC32(r io.Reader) ([]*ChecksumItem, error) {
+	return parseWithHashLength(newSfvParser(r).Parse, "CRC32", 8)
 }

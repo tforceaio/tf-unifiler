@@ -16,23 +16,32 @@
 
 package checksum
 
-type ChecksumItem struct {
-	Hash       string
-	BinaryMode bool
-	Path       string
+// parserBase holds the shared scanner and one-token look-ahead buffer used by
+// all checksum format parsers.
+type parserBase struct {
+	s   *scanner
+	buf struct {
+		tok token
+		lit string
+		n   int
+	}
 }
 
-type token int
+// scan returns the next token, replaying the buffered token when unscan was
+// called previously.
+func (p *parserBase) scan() (token, string) {
+	if p.buf.n != 0 {
+		p.buf.n = 0
+		return p.buf.tok, p.buf.lit
+	}
 
-const (
-	INVALID token = iota
-	SPACE
-	CR
-	LF
-	EOF
+	tok, lit := p.s.Scan()
+	p.buf.tok, p.buf.lit = tok, lit
+	return tok, lit
+}
 
-	ASTERISK
-	SEMICOLON
-
-	WORD
-)
+// unscan pushes the most recently scanned token back into the buffer so that
+// the next call to scan returns it again.
+func (p *parserBase) unscan() {
+	p.buf.n = 1
+}
