@@ -186,13 +186,13 @@ func (m *FileModule) logError(err error) {
 func FileCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "file",
-		Short: "Batch file processing in general.",
+		Short: "Batch file processing.",
 	}
 	rootCmd.PersistentFlags().StringArrayP("inputs", "i", []string{}, "Files/Directories to process.")
 
 	hashCmd := &cobra.Command{
 		Use:   "hash <input>...",
-		Short: "Compute hashes for files using common algorithms (MD5, SHA-1, SHA-256, SHA-512).",
+		Short: "Compute and print hashes for files.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -205,7 +205,7 @@ func FileCmd() *cobra.Command {
 
 	renameCmd := &cobra.Command{
 		Use:   "rename <input>...",
-		Short: "Rename multiples file using pre-defined settings.",
+		Short: "Multi-rename files and directories.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()

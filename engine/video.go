@@ -83,7 +83,7 @@ func (m *VideoModule) Info(file string) error {
 
 // Take screenshots for videos file from offet of the video file, for a limit duration, every interval.
 // All time are in seconds. Quality factor range from 1-100.
-func (m *VideoModule) Screenshot(file string, interval, offset, limit float64, quality int, outputDir string) error {
+func (m *VideoModule) ExtractFrames(file string, interval, offset, limit float64, quality int, outputDir string) error {
 	if err := validateInput(file, "input"); err != nil {
 		return err
 	}
@@ -215,13 +215,13 @@ func (m *VideoModule) logError(err error) {
 func VideoCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "video",
-		Short: "Batch video files processing.",
+		Short: "Video file processing.",
 	}
 	rootCmd.PersistentFlags().StringP("file", "i", "", "Input video file.")
 
 	infoCmd := &cobra.Command{
 		Use:   "info",
-		Short: "Analyze video file and store metadata in JSON format.",
+		Short: "Analyze video file.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -232,20 +232,20 @@ func VideoCmd() *cobra.Command {
 	}
 	rootCmd.AddCommand(infoCmd)
 
-	screenshotCmd := &cobra.Command{
-		Use:   "screenshot",
-		Short: "Scan and compute hashes files/directories then create hardlink to workspace.",
+	extractFramesCmd := &cobra.Command{
+		Use:   "extract-frames",
+		Short: "Extract multiple frames in video file.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
 			flags := ParseVideoFlags(cmd)
 			m := NewVideoModule(c, "screenshot")
-			m.logError(m.Screenshot(flags.File, flags.Interval, flags.Offset, flags.Limit, flags.Quality, flags.OutputDir))
+			m.logError(m.ExtractFrames(flags.File, flags.Interval, flags.Offset, flags.Limit, flags.Quality, flags.OutputDir))
 		},
 	}
-	screenshotCmd.Flags().IntP("quality", "q", 90, "Quality factor for screenshot in scale 1-100.")
-	screenshotCmd.Flags().StringP("output", "o", "", "Directory to save screenshots.")
-	rootCmd.AddCommand(screenshotCmd)
+	extractFramesCmd.Flags().IntP("quality", "q", 90, "Quality factor for screenshot in scale 1-100.")
+	extractFramesCmd.Flags().StringP("output", "o", "", "Directory to save screenshots.")
+	rootCmd.AddCommand(extractFramesCmd)
 
 	return rootCmd
 }

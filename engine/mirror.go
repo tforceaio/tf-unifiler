@@ -209,13 +209,13 @@ func MirrorWorkspaceRoot(workspaceDir string) string {
 func MirrorCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "mirror",
-		Short: "Centralize and save disk space by utilizing hard link feature in supported file system.",
+		Short: "Centralized file repository.",
 	}
 	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 
 	exportCmd := &cobra.Command{
 		Use:   "export",
-		Short: "Create file structure from checksum file.",
+		Short: "Create file structure defined by checksum file.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -230,7 +230,7 @@ func MirrorCmd() *cobra.Command {
 
 	scanCmd := &cobra.Command{
 		Use:   "scan",
-		Short: "Scan and compute hashes files/directories then create hardlink to workspace.",
+		Short: "Scan inputs and import them to mirror repository.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()

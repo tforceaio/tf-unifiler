@@ -98,12 +98,12 @@ func (m *ChecksumModule) logError(err error) {
 func ChecksumCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "checksum",
-		Short: "Create and verify checksum files.",
+		Short: "Checksum file processing.",
 	}
 
 	createCmd := &cobra.Command{
 		Use:   "create <input>...",
-		Short: "Create checksum file(s) using 1 or many hash algorithms.",
+		Short: "Create checksum file.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()

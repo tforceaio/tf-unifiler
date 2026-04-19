@@ -409,13 +409,13 @@ func MetadataWorkspaceDatabase(workspaceDir string) string {
 func MetadataCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "metadata",
-		Short: "File metadata management and mass file update using metadata.",
+		Short: "Centralized file metadata database.",
 	}
 	rootCmd.PersistentFlags().StringP("workspace", "w", "", "Directory contains Unifiler workspace.")
 
 	refineCmd := &cobra.Command{
 		Use:   "refine <input>...",
-		Short: "Refine file system contents by metadata.",
+		Short: "Refine inputs against metadata database.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
@@ -433,7 +433,7 @@ func MetadataCmd() *cobra.Command {
 
 	scanCmd := &cobra.Command{
 		Use:   "scan <input>...",
-		Short: "Compute hashes for files using common algorithms (MD5, SHA-1, SHA-256, SHA-512) and persist them.",
+		Short: "Scan inputs for file metadata.",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := InitApp()
 			defer c.Close()
