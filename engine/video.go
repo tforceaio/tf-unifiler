@@ -50,10 +50,8 @@ func NewVideoModule(c *Controller, cmdName string) *VideoModule {
 
 // Analyze video file and store metadata in JSON format.
 func (m *VideoModule) Info(file string) error {
-	if file == "" {
-		return errors.New("input is not set")
-	} else if !filesys.IsFileExist(file) {
-		return errors.New("input file not found")
+	if err := validateInput(file, "input"); err != nil {
+		return err
 	}
 	m.logger.Info().
 		Str("input", file).
@@ -86,10 +84,8 @@ func (m *VideoModule) Info(file string) error {
 // Take screenshots for videos file from offet of the video file, for a limit duration, every interval.
 // All time are in seconds. Quality factor range from 1-100.
 func (m *VideoModule) Screenshot(file string, interval, offset, limit float64, quality int, outputDir string) error {
-	if file == "" {
-		return errors.New("input is not set")
-	} else if !filesys.IsFileExist(file) {
-		return errors.New("input file not found")
+	if err := validateInput(file, "input"); err != nil {
+		return err
 	}
 	if outputDir == "" {
 		m.logger.Warn().Msg("Output directory is not specified, screenshot will be saved in same directory as input.")
@@ -212,9 +208,7 @@ func (m *VideoModule) DefaultScreenshotParameter(lengthMs *big.Int) (*big.Int, *
 
 // Decorator to log error occurred when calling handlers.
 func (m *VideoModule) logError(err error) {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
-	}
+	logProgramError(m.logger, err)
 }
 
 // Define Cobra Command for Video module.
@@ -223,6 +217,7 @@ func VideoCmd() *cobra.Command {
 		Use:   "video",
 		Short: "Batch video files processing.",
 	}
+	rootCmd.PersistentFlags().StringP("file", "i", "", "Input video file.")
 
 	infoCmd := &cobra.Command{
 		Use:   "info",
@@ -235,7 +230,6 @@ func VideoCmd() *cobra.Command {
 			m.logError(m.Info(flags.File))
 		},
 	}
-	infoCmd.Flags().StringP("file", "i", "", "Video file to generate info.")
 	rootCmd.AddCommand(infoCmd)
 
 	screenshotCmd := &cobra.Command{
@@ -249,7 +243,6 @@ func VideoCmd() *cobra.Command {
 			m.logError(m.Screenshot(flags.File, flags.Interval, flags.Offset, flags.Limit, flags.Quality, flags.OutputDir))
 		},
 	}
-	screenshotCmd.Flags().StringP("file", "i", "", "Video file to take screenshot.")
 	screenshotCmd.Flags().IntP("quality", "q", 90, "Quality factor for screenshot in scale 1-100.")
 	screenshotCmd.Flags().StringP("output", "o", "", "Directory to save screenshots.")
 	rootCmd.AddCommand(screenshotCmd)

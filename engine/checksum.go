@@ -26,7 +26,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
-	"github.com/tforceaio/tf-unifiler-go/crypto/hasher"
 	"github.com/tforceaio/tf-unifiler-go/filesys"
 )
 
@@ -54,35 +53,25 @@ func (m *ChecksumModule) Create(inputs []string, output string, algorithms []str
 		Str("output", output).
 		Msg("Start computing hashes.")
 
-	contents, err := filesys.List(inputs, true)
+	fhResults, err := listAndHashFiles(inputs, algorithms, true)
 	if err != nil {
 		return err
 	}
 
-	hResults := []*hasher.HashResult{}
-	for _, c := range contents {
-		if c.IsDir {
-			continue
-		}
-		fhResults, err := hasher.Hash(c.RelativePath, algorithms)
+	for _, r := range fhResults {
 		m.logger.Info().
 			Strs("algos", algorithms).
-			Str("file", c.RelativePath).
-			Int("size", fhResults[0].Size).
+			Str("file", r.Entry.RelativePath).
+			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
-		if err != nil {
-			return err
-		}
-		hResults = append(hResults, fhResults...)
 	}
 
-	for _, a := range algorithms {
+	for i, a := range algorithms {
 		fContents := []string{}
-		for _, r := range hResults {
-			if a == r.Algorithm {
-				line := fmt.Sprintf("%s *%s", hex.EncodeToString(r.Hash), r.Path)
-				fContents = append(fContents, line)
-			}
+		for _, r := range fhResults {
+			h := r.Hashes[i]
+			line := fmt.Sprintf("%s *%s", hex.EncodeToString(h.Hash), r.Entry.RelativePath)
+			fContents = append(fContents, line)
 		}
 
 		outputInternal := opx.Ternary(output == "", "checksum", output)
@@ -102,9 +91,7 @@ func (m *ChecksumModule) Create(inputs []string, output string, algorithms []str
 
 // Decorator to log error occurred when calling handlers.
 func (m *ChecksumModule) logError(err error) {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred. Program will exit.")
-	}
+	logProgramError(m.logger, err)
 }
 
 // Define Cobra Command for Checksum module.
