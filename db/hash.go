@@ -28,6 +28,7 @@ type Hash struct {
 	Sha1   string    `gorm:"column:sha1"`
 	Sha256 string    `gorm:"column:sha256;uniqueIndex"`
 	Sha512 string    `gorm:"column:sha512"`
+	Crc32  string    `gorm:"column:crc32"`
 
 	Size        uint32 `gorm:"column:size"`
 	Description string `gorm:"column:description"`
@@ -39,6 +40,7 @@ type Hash struct {
 // Return new hash.
 func NewHash(fileHashes *core.FileMultiHash, isIgnored bool) *Hash {
 	return &Hash{
+		Crc32:       fileHashes.Crc32.HexStr(),
 		Md5:         fileHashes.Md5.HexStr(),
 		Sha1:        fileHashes.Sha1.HexStr(),
 		Sha256:      fileHashes.Sha256.HexStr(),
@@ -197,6 +199,7 @@ func (c *DbContext) writeHashes(newHashes []*Hash, changedHashes []*Hash) error 
 				"sha1":        hash.Sha1,
 				"sha256":      hash.Sha256,
 				"sha512":      hash.Sha512,
+				"crc32":       hash.Crc32,
 				"size":        hash.Size,
 				"description": hash.Description,
 				"is_ignored":  hash.IsIgnored,

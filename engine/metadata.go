@@ -67,7 +67,7 @@ func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []strin
 		Str("workspace", workspaceDir).
 		Msg("Start refining file system.")
 
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	algos := []string{"crc32", "md5", "sha1", "sha256", "sha512"}
 	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
@@ -80,11 +80,12 @@ func (m *MetadataModule) Refine(workspaceDir string, inputs, collections []strin
 	}
 
 	for _, r := range fhResults {
-		sha256 := hex.EncodeToString(r.Hashes[2].Hash)
+		sha256 := hex.EncodeToString(r.Hashes[3].Hash)
 		m.logger.Info().
-			Str("md5", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("crc32", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("md5", hex.EncodeToString(r.Hashes[1].Hash)).
 			Str("path", r.Entry.RelativePath).
-			Str("sha1", hex.EncodeToString(r.Hashes[1].Hash)).
+			Str("sha1", hex.EncodeToString(r.Hashes[2].Hash)).
 			Str("sha256", sha256).
 			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
@@ -145,7 +146,7 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 		Str("workspace", workspaceDir).
 		Msg("Start scanning files metadata.")
 
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	algos := []string{"crc32", "md5", "sha1", "sha256", "sha512"}
 	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
@@ -159,10 +160,11 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 		fileMultiHash := &core.FileMultiHash{
-			Md5:      r.Hashes[0].Hash,
-			Sha1:     r.Hashes[1].Hash,
-			Sha256:   r.Hashes[2].Hash,
-			Sha512:   r.Hashes[3].Hash,
+			Crc32:    r.Hashes[0].Hash,
+			Md5:      r.Hashes[1].Hash,
+			Sha1:     r.Hashes[2].Hash,
+			Sha256:   r.Hashes[3].Hash,
+			Sha512:   r.Hashes[4].Hash,
 			Size:     uint32(r.Hashes[0].Size),
 			FileName: r.Entry.Name,
 		}
