@@ -24,6 +24,7 @@ import (
 type Mapping struct {
 	ID        uuid.UUID `gorm:"column:id;primaryKey"`
 	HashID    uuid.UUID `gorm:"column:hash_id"`
+	Directory string    `gorm:"column:directory"`
 	Name      string    `gorm:"column:name"`
 	Extension string    `gorm:"column:extension"`
 
@@ -37,9 +38,10 @@ func (e *Mapping) FullName() string {
 	return e.Name + e.Extension
 }
 
-func NewMapping(hashID uuid.UUID, name, extension string) *Mapping {
+func NewMapping(hashID uuid.UUID, directory, name, extension string) *Mapping {
 	return &Mapping{
 		HashID:    hashID,
+		Directory: directory,
 		Name:      name,
 		Extension: extension,
 	}
@@ -111,6 +113,7 @@ func (ctx *DbContext) writeMappings(newMappings []*Mapping, changedMappings []*M
 			Where("id = ?", mapping.ID).
 			Updates(map[string]interface{}{
 				"hash_id":    mapping.HashID,
+				"directory":  mapping.Directory,
 				"name":       mapping.Name,
 				"extension":  mapping.Extension,
 				"session_id": mapping.SessionID,
@@ -131,5 +134,5 @@ func areEqualMappings(x, y *Mapping) bool {
 	if x == nil || y == nil {
 		return false
 	}
-	return x.HashID == y.HashID && x.Name == y.Name && x.Extension == y.Extension
+	return x.HashID == y.HashID && x.Directory == y.Directory && x.Name == y.Name && x.Extension == y.Extension
 }

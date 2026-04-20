@@ -160,13 +160,14 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 		fileMultiHash := &core.FileMultiHash{
-			Crc32:    r.Hashes[0].Hash,
-			Md5:      r.Hashes[1].Hash,
-			Sha1:     r.Hashes[2].Hash,
-			Sha256:   r.Hashes[3].Hash,
-			Sha512:   r.Hashes[4].Hash,
-			Size:     uint32(r.Hashes[0].Size),
-			FileName: r.Entry.Name,
+			Crc32:     r.Hashes[0].Hash,
+			Md5:       r.Hashes[1].Hash,
+			Sha1:      r.Hashes[2].Hash,
+			Sha256:    r.Hashes[3].Hash,
+			Sha512:    r.Hashes[4].Hash,
+			Size:      uint32(r.Hashes[0].Size),
+			Directory: filepath.Dir(r.Entry.RelativePath),
+			FileName:  r.Entry.Name,
 		}
 		hResults = append(hResults, fileMultiHash)
 	}
@@ -357,7 +358,7 @@ func (m *MetadataModule) saveHResults(ctx *db.DbContext, hResults []*core.FileMu
 	mappings := make([]*db.Mapping, len(hResults))
 	for i, res := range hResults {
 		fileName := strfmt.NewFileNameFromStr(res.FileName)
-		mappings[i] = db.NewMapping(hashesMap[res.Sha256.HexStr()], fileName.Name, fileName.Extension)
+		mappings[i] = db.NewMapping(hashesMap[res.Sha256.HexStr()], res.Directory, fileName.Name, fileName.Extension)
 		mappings[i].SessionID = sessionID
 	}
 	err = ctx.SaveMappings(mappings)

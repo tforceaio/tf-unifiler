@@ -19,11 +19,12 @@ package core
 import "github.com/tforce-io/tf-golib/stdx"
 
 type FileMultiHash struct {
-	Crc32    stdx.Bytes
-	Md5      stdx.Bytes
-	Sha1     stdx.Bytes
-	Sha256   stdx.Bytes
-	Sha512   stdx.Bytes
-	Size     uint32
-	FileName string
+	Crc32     stdx.Bytes
+	Md5       stdx.Bytes
+	Sha1      stdx.Bytes
+	Sha256    stdx.Bytes
+	Sha512    stdx.Bytes
+	Size      uint32
+	Directory string
+	FileName  string
 }
