@@ -56,7 +56,7 @@ func (m *FileModule) Hash(inputs []string) error {
 		Strs("files", inputs).
 		Msg("Start hashing files.")
 
-	algos := []string{"md5", "sha1", "sha256", "sha512"}
+	algos := []string{"crc32", "md5", "sha1", "sha256", "sha512"}
 	fhResults, err := listAndHashFiles(inputs, algos, true)
 	if err != nil {
 		return err
@@ -64,11 +64,12 @@ func (m *FileModule) Hash(inputs []string) error {
 
 	for _, r := range fhResults {
 		m.logger.Info().
-			Str("md5", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("crc32", hex.EncodeToString(r.Hashes[0].Hash)).
+			Str("md5", hex.EncodeToString(r.Hashes[1].Hash)).
 			Str("path", r.Entry.RelativePath).
-			Str("sha1", hex.EncodeToString(r.Hashes[1].Hash)).
-			Str("sha256", hex.EncodeToString(r.Hashes[2].Hash)).
-			Str("sha512", hex.EncodeToString(r.Hashes[3].Hash)).
+			Str("sha1", hex.EncodeToString(r.Hashes[2].Hash)).
+			Str("sha256", hex.EncodeToString(r.Hashes[3].Hash)).
+			Str("sha512", hex.EncodeToString(r.Hashes[4].Hash)).
 			Int("size", r.Hashes[0].Size).
 			Msg("Hashed file.")
 	}
@@ -86,6 +87,9 @@ func (m *FileModule) Rename(inputs []string, preset string) error {
 		Str("preset", preset).
 		Msg("Start renaming file.")
 
+	if preset == "crc32" {
+		return m.renameByHash(inputs, preset, "6372633332_")
+	}
 	if preset == "md4" {
 		return m.renameByHash(inputs, preset, "6d6434_")
 	}

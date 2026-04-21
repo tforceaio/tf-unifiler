@@ -17,11 +17,15 @@
 package db
 
 import (
+	"log"
+	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/glebarez/sqlite"
 	"github.com/tforceaio/tf-unifiler-go/filesys"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var SchemaVersion = 2
@@ -42,7 +46,17 @@ func Connect(uri string) (*DbContext, error) {
 			return nil, err
 		}
 	}
-	db, err := gorm.Open(sqlite.Open(uri), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(uri), &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags),
+			logger.Config{
+				SlowThreshold:             time.Second,
+				LogLevel:                  logger.Warn,
+				IgnoreRecordNotFoundError: true,
+				Colorful:                  false,
+			},
+		),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +72,8 @@ func (c *DbContext) Disconnect() {
 // Migrate database schema to match database models.
 func (c *DbContext) Migrate() error {
 	return c.db.AutoMigrate(
+		&Archive{},
+		&ArchiveContent{},
 		&Hash{},
 		&Mapping{},
 		&Session{},
@@ -81,6 +97,8 @@ func (c *DbContext) Count(model interface{}, query, args interface{}) (int64, er
 
 // Truncate all tables.
 func (c *DbContext) Reset() {
+	c.Truncate(&Archive{})
+	c.Truncate(&ArchiveContent{})
 	c.Truncate(&Hash{})
 	c.Truncate(&Mapping{})
 	c.Truncate(&Session{})

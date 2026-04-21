@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"hash"
+	"hash/crc32"
 	"io"
 	"os"
 
@@ -53,6 +54,10 @@ func Hash(fPath string, algorithms []string) ([]*HashResult, error) {
 			Algorithm: a,
 		}
 		switch a {
+		case "crc32":
+			hashers[i] = crc32.NewIEEE()
+		case "crc32c":
+			hashers[i] = crc32.New(crc32.MakeTable(crc32.Castagnoli))
 		case "md4":
 			hashers[i] = md4.New()
 		case "md5":

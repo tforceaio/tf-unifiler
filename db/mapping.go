@@ -23,7 +23,8 @@ import (
 
 type Mapping struct {
 	ID        uuid.UUID `gorm:"column:id;primaryKey"`
-	HashID    uuid.UUID `gorm:"column:hash_id"`
+	HashID    Bytes32   `gorm:"column:hash_id"`
+	Directory string    `gorm:"column:directory"`
 	Name      string    `gorm:"column:name"`
 	Extension string    `gorm:"column:extension"`
 
@@ -37,15 +38,16 @@ func (e *Mapping) FullName() string {
 	return e.Name + e.Extension
 }
 
-func NewMapping(hashID uuid.UUID, name, extension string) *Mapping {
+func NewMapping(hashID Bytes32, directory, name, extension string) *Mapping {
 	return &Mapping{
 		HashID:    hashID,
+		Directory: directory,
 		Name:      name,
 		Extension: extension,
 	}
 }
 
-func (ctx *DbContext) GetMappingsByHashIDs(hashes uuid.UUIDs) ([]*Mapping, error) {
+func (ctx *DbContext) GetMappingsByHashIDs(hashes []Bytes32) ([]*Mapping, error) {
 	return ctx.findMappingsByHashIDs(hashes)
 }
 
@@ -54,7 +56,7 @@ func (ctx *DbContext) GetMappingsBySha256s(hashes []string) ([]*Mapping, error) 
 }
 
 func (ctx *DbContext) SaveMappings(mappings []*Mapping) error {
-	hashes := make([]uuid.UUID, len(mappings))
+	hashes := make([]Bytes32, len(mappings))
 	for i, mapping := range mappings {
 		hashes[i] = mapping.HashID
 	}
@@ -74,7 +76,7 @@ func (ctx *DbContext) SaveMappings(mappings []*Mapping) error {
 	return ctx.writeMappings(newMappings, []*Mapping{})
 }
 
-func (ctx *DbContext) findMappingsByHashIDs(hashes uuid.UUIDs) ([]*Mapping, error) {
+func (ctx *DbContext) findMappingsByHashIDs(hashes []Bytes32) ([]*Mapping, error) {
 	var docs []*Mapping
 	result := ctx.db.Model(&Mapping{}).
 		Where("hash_id IN ?", hashes).
@@ -111,6 +113,7 @@ func (ctx *DbContext) writeMappings(newMappings []*Mapping, changedMappings []*M
 			Where("id = ?", mapping.ID).
 			Updates(map[string]interface{}{
 				"hash_id":    mapping.HashID,
+				"directory":  mapping.Directory,
 				"name":       mapping.Name,
 				"extension":  mapping.Extension,
 				"session_id": mapping.SessionID,
@@ -131,5 +134,5 @@ func areEqualMappings(x, y *Mapping) bool {
 	if x == nil || y == nil {
 		return false
 	}
-	return x.HashID == y.HashID && x.Name == y.Name && x.Extension == y.Extension
+	return x.HashID == y.HashID && x.Directory == y.Directory && x.Name == y.Name && x.Extension == y.Extension
 }

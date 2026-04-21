@@ -19,10 +19,7 @@ package filesys
 import (
 	"bufio"
 	"os"
-	"path"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/tforce-io/tf-golib/opx"
 )
@@ -72,7 +69,7 @@ func CreateEntry(fPath string) (*FsEntry, error) {
 
 func CreateHardlink(sPath, tPath string) error {
 	ntPath := NormalizePath(tPath)
-	parent, _ := path.Split(ntPath)
+	parent, _ := filepath.Split(ntPath)
 	if !IsExist(parent) {
 		err := os.MkdirAll(parent, 0775)
 		logger.Debug().Str("dir", parent).Str("target", tPath).Msgf("Created parent directory '%s'", parent)
@@ -88,21 +85,11 @@ func CreateHardlink(sPath, tPath string) error {
 }
 
 func GetAbsPath(fPath string) (string, error) {
-	absolutePath, err := filepath.Abs(fPath)
-	if err == nil {
-		absolutePath = NormalizePath(absolutePath)
-	}
-	return absolutePath, err
+	return filepath.Abs(fPath)
 }
 
 func IsAbsPath(fPath string) bool {
-	if strings.HasPrefix(fPath, "/") {
-		return true
-	}
-	if isAbs, _ := regexp.MatchString(fPath, "^[a-zA-Z]:[\\/]"); isAbs {
-		return true
-	}
-	return false
+	return filepath.IsAbs(fPath)
 }
 
 func IsExist(fPath string) bool {
@@ -135,9 +122,7 @@ func IsFileExist(fPath string) bool {
 }
 
 func Join(elem ...string) string {
-	result := path.Join(elem...)
-	result = NormalizePath(result)
-	return result
+	return filepath.Join(elem...)
 }
 
 func List(fPaths []string, recursive bool) (FsEntries, error) {
@@ -161,8 +146,7 @@ func List(fPaths []string, recursive bool) (FsEntries, error) {
 }
 
 func NormalizePath(fPath string) string {
-	newPath := strings.ReplaceAll(fPath, "\\", "/") // enfore linux path style for clarity
-	return newPath
+	return filepath.FromSlash(fPath) // use OS-native path separator
 }
 
 func WriteLines(fPath string, lines []string) error {
