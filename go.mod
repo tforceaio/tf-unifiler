@@ -12,7 +12,7 @@ require (
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1
-	github.com/tforce-io/tf-golib v0.3.0
+	github.com/tforce-io/tf-golib v0.10.0
 	golang.org/x/crypto v0.26.0
 	gorm.io/gorm v1.25.12
 )
