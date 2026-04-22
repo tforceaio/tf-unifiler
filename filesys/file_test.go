@@ -32,7 +32,7 @@ func TestList(t *testing.T) {
 	}{
 		{"files only", []string{"file.go"}, []string{"file.go"}},
 		{"directories only", []string{"../build"}, []string{filepath.FromSlash("../build"), filepath.FromSlash("../build/ci.go"), filepath.FromSlash("../build/env.go"), filepath.FromSlash("../build/git.go"), filepath.FromSlash("../build/go.go"), filepath.FromSlash("../build/os.go")}},
-		{"file and directories", []string{".", "file.go"}, []string{".", "directory.go", "directory_test.go", "exec", filepath.FromSlash("exec/exec.go"), filepath.FromSlash("exec/ffmpeg.go"), filepath.FromSlash("exec/logger.go"), filepath.FromSlash("exec/mediainfo.go"), filepath.FromSlash("exec/mediainfo_report.go"), filepath.FromSlash("exec/mediainfo_test.go"), "file.go", "file_test.go", "logger.go", "file.go"}},
+		{"file and directories", []string{".", "file.go"}, []string{".", "directory.go", "directory_test.go", "exec", filepath.FromSlash("exec/exec.go"), filepath.FromSlash("exec/ffmpeg.go"), filepath.FromSlash("exec/mediainfo.go"), filepath.FromSlash("exec/mediainfo_report.go"), filepath.FromSlash("exec/mediainfo_test.go"), "file.go", "file_test.go"}},
 		{"two dots", []string{"../.tests"}, []string{
 			filepath.FromSlash("../.tests"), filepath.FromSlash("../.tests/basic"), filepath.FromSlash("../.tests/basic/1-helloworld.md"),
 			filepath.FromSlash("../.tests/module"), filepath.FromSlash("../.tests/module/fmt"), filepath.FromSlash("../.tests/module/fmt/1-printf.md"), filepath.FromSlash("../.tests/module/fmt/2-errorf.md"),

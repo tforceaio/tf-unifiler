@@ -72,16 +72,11 @@ func CreateHardlink(sPath, tPath string) error {
 	parent, _ := filepath.Split(ntPath)
 	if !IsExist(parent) {
 		err := os.MkdirAll(parent, 0775)
-		logger.Debug().Str("dir", parent).Str("target", tPath).Msgf("Created parent directory '%s'", parent)
 		if err != nil {
 			return err
 		}
 	}
-	err := os.Link(sPath, tPath)
-	if err == nil {
-		logger.Debug().Str("src", sPath).Str("target", tPath).Msgf("Created link for '%s'", sPath)
-	}
-	return err
+	return os.Link(sPath, tPath)
 }
 
 func GetAbsPath(fPath string) (string, error) {

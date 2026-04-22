@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
 	"github.com/tforceaio/tf-unifiler/filesys"
-	"github.com/tforceaio/tf-unifiler/filesys/exec"
 )
 
 var majorVersion = 0
@@ -62,9 +61,6 @@ func version() string {
 // information about this invocation.
 func InitApp() *Controller {
 	cfg := NewController(true)
-
-	filesys.SetLogger(cfg.ModuleLogger("filesystem"))
-	exec.SetLogger(cfg.ModuleLogger("exec"))
 
 	pwd, _ := os.Getwd()
 	pwd, _ = filesys.GetAbsPath(pwd)
