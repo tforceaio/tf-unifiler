@@ -36,8 +36,8 @@ var gitCommit, gitDate, gitBranch string
 
 func version() string {
 	originDate := time.Date(2024, time.August, 13, 0, 0, 0, 0, time.UTC)
-	gitDate2, _ := time.Parse("20060102", gitDate)
-	buildDate := opx.Ternary(gitDate == "", time.Now().UTC(), gitDate2)
+	gitDate2, err := time.Parse("20060102", gitDate)
+	buildDate := opx.Ternary(err == nil, gitDate2, time.Now().UTC())
 	duration := buildDate.Sub(originDate)
 	minor := minorVersion
 	patch := strconv.Itoa(patchVersion)
@@ -52,8 +52,8 @@ func version() string {
 	} else {
 		patch = strconv.Itoa(patchVersion+1) + "-dev"
 	}
-	if gitCommit != "" {
-		return fmt.Sprintf("%d.%d.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit)
+	if gitCommit != "" && len(gitCommit) >= 8 {
+		return fmt.Sprintf("%d.%d.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit[:8])
 	}
 	return fmt.Sprintf("%d.%d.%s.%d", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000))
 }
