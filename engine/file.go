@@ -25,6 +25,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
+	"github.com/tforceaio/tf-unifiler/diag"
 	"github.com/tforceaio/tf-unifiler/filesys"
 )
 
@@ -34,15 +35,17 @@ type FileRenameMapping struct {
 	Target string `json:"t,omitempty"`
 }
 
-// FileModule handles user requests related to batch processing of files in general.
+// FileModule handles user requests related to batch processing files.
 type FileModule struct {
-	logger zerolog.Logger
+	notifier diag.Notifier
+	logger   zerolog.Logger
 }
 
 // Return new FileModule.
 func NewFileModule(c *Controller, cmdName string) *FileModule {
 	return &FileModule{
-		logger: c.CommandLogger("file", cmdName),
+		notifier: c.Notifier,
+		logger:   c.CommandLogger("file", cmdName),
 	}
 }
 
@@ -190,7 +193,7 @@ func (m *FileModule) logError(err error) {
 func FileCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "file",
-		Short: "Batch file processing.",
+		Short: "Batch processing file.",
 	}
 	rootCmd.PersistentFlags().StringArrayP("inputs", "i", []string{}, "Files/Directories to process.")
 

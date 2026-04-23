@@ -21,13 +21,19 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/tforceaio/tf-unifiler/config"
+	"github.com/tforceaio/tf-unifiler/crypto/hasher"
+	"github.com/tforceaio/tf-unifiler/diag"
+	"github.com/tforceaio/tf-unifiler/filesys"
+	"github.com/tforceaio/tf-unifiler/filesys/exec"
+	"github.com/tforceaio/tf-unifiler/tui"
 )
 
 // Controller is the entrypoint for working with application configurations and
 // loggings.
 type Controller struct {
-	Root   *config.RootConfig
-	Logger zerolog.Logger
+	Root     *config.RootConfig
+	Logger   zerolog.Logger
+	Notifier diag.Notifier
 
 	logFile *os.File
 }
@@ -43,11 +49,18 @@ func NewController(useFS bool) *Controller {
 	if err2 != nil {
 		logger.Err(err2).Msg("error initializing log file")
 	}
+	var notifier diag.Notifier
+	if tui.IsTTY() {
+		notifier = tui.NewBubbleteaNotifier()
+		hasher.SetNotify(notifier)
+		filesys.SetNotify(notifier)
+		exec.SetNotify(notifier)
+	}
 	return &Controller{
-		Root:   cfg,
-		Logger: logger,
-
-		logFile: logFile,
+		Root:     cfg,
+		Logger:   logger,
+		Notifier: notifier,
+		logFile:  logFile,
 	}
 }
 

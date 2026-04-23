@@ -26,6 +26,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
+	"github.com/tforceaio/tf-unifiler/diag"
 	"github.com/tforceaio/tf-unifiler/encoding/checksum"
 	"github.com/tforceaio/tf-unifiler/filesys"
 )
@@ -36,15 +37,17 @@ type FileMirrorMapping struct {
 	Hash   string `json:"h,omitempty"`
 }
 
-// MirrorModule handles user requests related to file centralization feature.
+// MirrorModule handles user requests related to centralized file vaulting.
 type MirrorModule struct {
-	logger zerolog.Logger
+	logger   zerolog.Logger
+	notifier diag.Notifier
 }
 
 // Return new MirrorModule.
 func NewMirrorModule(c *Controller, cmdName string) *MirrorModule {
 	return &MirrorModule{
-		logger: c.CommandLogger("mirror", cmdName),
+		logger:   c.CommandLogger("mirror", cmdName),
+		notifier: c.Notifier,
 	}
 }
 
