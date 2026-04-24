@@ -143,6 +143,7 @@ func (n BubbleteaNotifier) OnFinish(_ string, _ time.Duration) {
 	i.action = ""
 	i.item = ""
 	i.itemPercent = 1.0
+	i.itemFinished++
 	if i.itemTotal > 0 {
 		i.totalPercent = 1.0
 	} else {
