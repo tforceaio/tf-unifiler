@@ -14,20 +14,28 @@
 // You should have received a copy of the GNU General Public License
 // along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package hasher
+package tui
 
 import (
-	"crypto/md5"
-
-	"golang.org/x/crypto/md4"
+	tea "charm.land/bubbletea/v2"
 )
 
-// Compute the MD4 checksum of a file.
-func HashMd4(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md4.New(), "md4")
+// TeaProgramHandle provides caller a way to stop the Bubbletea program.
+type TeaProgramHandle struct {
+	program  *tea.Program
+	notifier *BubbleteaNotifier
+	done     chan error
 }
 
-// Compute the MD5 checksum of a file.
-func HashMd5(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md5.New(), "md5")
+// Stop running Bubbletea program.
+func (p *TeaProgramHandle) Stop() {
+	p.notifier.setProgram(nil)
+	p.program.Quit()
+	<-p.done
+}
+
+// Run ProcessStatus and show it on the terminal.
+func RunProcessStatus(notifier *BubbleteaNotifier) *TeaProgramHandle {
+	m := NewProcessStatus()
+	return m.Run(notifier)
 }

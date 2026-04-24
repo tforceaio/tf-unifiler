@@ -29,22 +29,25 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
 	"github.com/tforceaio/tf-unifiler/config"
+	"github.com/tforceaio/tf-unifiler/diag"
 	"github.com/tforceaio/tf-unifiler/filesys"
 	"github.com/tforceaio/tf-unifiler/filesys/exec"
 	"github.com/tforceaio/tf-unifiler/internal/nullable"
 )
 
-// VideoModule handles user requests related to batch processing of video files.
+// VideoModule handles user requests related to batch processing video files.
 type VideoModule struct {
-	cfg    *config.RootConfig
-	logger zerolog.Logger
+	cfg      *config.RootConfig
+	logger   zerolog.Logger
+	notifier diag.Notifier
 }
 
 // Return new VideoModule.
 func NewVideoModule(c *Controller, cmdName string) *VideoModule {
 	return &VideoModule{
-		cfg:    c.Root,
-		logger: c.CommandLogger("video", cmdName),
+		cfg:      c.Root,
+		logger:   c.CommandLogger("video", cmdName),
+		notifier: c.Notifier,
 	}
 }
 
@@ -215,7 +218,7 @@ func (m *VideoModule) logError(err error) {
 func VideoCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "video",
-		Short: "Video file processing.",
+		Short: "Batch processing video file.",
 	}
 	rootCmd.PersistentFlags().StringP("file", "i", "", "Input video file.")
 

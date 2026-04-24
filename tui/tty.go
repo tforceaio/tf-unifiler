@@ -14,20 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package hasher
+package tui
 
 import (
-	"crypto/md5"
+	"os"
 
-	"golang.org/x/crypto/md4"
+	"github.com/mattn/go-isatty"
 )
 
-// Compute the MD4 checksum of a file.
-func HashMd4(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md4.New(), "md4")
-}
-
-// Compute the MD5 checksum of a file.
-func HashMd5(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md5.New(), "md5")
+// Check if the current output is a terminal.
+func IsTTY() bool {
+	return isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 }

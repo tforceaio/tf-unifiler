@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
 	"github.com/tforceaio/tf-unifiler/filesys"
-	"github.com/tforceaio/tf-unifiler/filesys/exec"
 )
 
 var majorVersion = 0
@@ -36,8 +35,8 @@ var gitCommit, gitDate, gitBranch string
 
 func version() string {
 	originDate := time.Date(2024, time.August, 13, 0, 0, 0, 0, time.UTC)
-	gitDate2, _ := time.Parse("20060102", gitDate)
-	buildDate := opx.Ternary(gitDate == "", time.Now().UTC(), gitDate2)
+	gitDate2, err := time.Parse("20060102", gitDate)
+	buildDate := opx.Ternary(err == nil, gitDate2, time.Now().UTC())
 	duration := buildDate.Sub(originDate)
 	minor := minorVersion
 	patch := strconv.Itoa(patchVersion)
@@ -52,8 +51,8 @@ func version() string {
 	} else {
 		patch = strconv.Itoa(patchVersion+1) + "-dev"
 	}
-	if gitCommit != "" {
-		return fmt.Sprintf("%d.%d.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit)
+	if gitCommit != "" && len(gitCommit) >= 8 {
+		return fmt.Sprintf("%d.%d.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit[:8])
 	}
 	return fmt.Sprintf("%d.%d.%s.%d", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000))
 }
@@ -62,9 +61,6 @@ func version() string {
 // information about this invocation.
 func InitApp() *Controller {
 	cfg := NewController(true)
-
-	filesys.SetLogger(cfg.ModuleLogger("filesystem"))
-	exec.SetLogger(cfg.ModuleLogger("exec"))
 
 	pwd, _ := os.Getwd()
 	pwd, _ = filesys.GetAbsPath(pwd)

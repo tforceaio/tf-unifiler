@@ -14,20 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package hasher
+package filesys
 
-import (
-	"crypto/md5"
+import "github.com/tforceaio/tf-unifiler/diag"
 
-	"golang.org/x/crypto/md4"
-)
+var notifier diag.Notifier = nil
 
-// Compute the MD4 checksum of a file.
-func HashMd4(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md4.New(), "md4")
-}
-
-// Compute the MD5 checksum of a file.
-func HashMd5(fPath string) (*HashResult, error) {
-	return hashFile(fPath, md5.New(), "md5")
+// Set diag.Notifier handler for whole module
+func SetNotify(n diag.Notifier) {
+	notifier = n
 }

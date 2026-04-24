@@ -32,18 +32,21 @@ import (
 	"github.com/tforce-io/tf-golib/strfmt"
 	"github.com/tforceaio/tf-unifiler/core"
 	"github.com/tforceaio/tf-unifiler/db"
+	"github.com/tforceaio/tf-unifiler/diag"
 	"github.com/tforceaio/tf-unifiler/filesys"
 )
 
-// MetadataModule handles user requests related file hashes.
+// MetadataModule handles user requests related to centralized file metadata.
 type MetadataModule struct {
-	logger zerolog.Logger
+	logger   zerolog.Logger
+	notifier diag.Notifier
 }
 
 // Return new MetadataModule.
 func NewMetadataModule(c *Controller, cmdName string) *MetadataModule {
 	return &MetadataModule{
-		logger: c.CommandLogger("metadata", cmdName),
+		logger:   c.CommandLogger("metadata", cmdName),
+		notifier: c.Notifier,
 	}
 }
 

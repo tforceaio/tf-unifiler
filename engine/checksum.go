@@ -26,18 +26,21 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
+	"github.com/tforceaio/tf-unifiler/diag"
 	"github.com/tforceaio/tf-unifiler/filesys"
 )
 
 // ChecksumModule handles user requests related checksum file creation and verification.
 type ChecksumModule struct {
-	logger zerolog.Logger
+	logger   zerolog.Logger
+	notifier diag.Notifier
 }
 
 // Return new ChecksumModule.
 func NewChecksumModule(c *Controller, cmdName string) *ChecksumModule {
 	return &ChecksumModule{
-		logger: c.CommandLogger("checksum", cmdName),
+		logger:   c.CommandLogger("checksum", cmdName),
+		notifier: c.Notifier,
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024 T-Force I/O
+// Copyright (C) 2025 T-Force I/O
 // This file is part of TFunifiler
 //
 // TFunifiler is free software: you can redistribute it and/or modify
@@ -14,15 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
-package exec
+package hasher
 
-import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-)
+import "github.com/tforceaio/tf-unifiler/diag"
 
-var logger = log.Logger
+var notifier diag.Notifier = nil
 
-func SetLogger(l zerolog.Logger) {
-	logger = l
+// Set diag.Notifier handler for whole module
+func SetNotify(n diag.Notifier) {
+	notifier = n
 }

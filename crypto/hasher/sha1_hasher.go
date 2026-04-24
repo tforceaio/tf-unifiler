@@ -1,23 +1,24 @@
-// Copyright (C) 2024 T-Force I/O
-// This file is part of TF Unifiler
+// Copyright (C) 2025 T-Force I/O
+// This file is part of TFunifiler
 //
-// TF Unifiler is free software: you can redistribute it and/or modify
+// TFunifiler is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// TF Unifiler is distributed in the hope that it will be useful,
+// TFunifiler is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with TF Unifiler. If not, see <https://www.gnu.org/licenses/>.
+// along with TFunifiler. If not, see <https://www.gnu.org/licenses/>.
 
 package hasher
 
 import "crypto/sha1"
 
+// Compute SHA-1 checksum of a file.
 func HashSha1(fPath string) (*HashResult, error) {
 	return hashFile(fPath, sha1.New(), "sha1")
 }
