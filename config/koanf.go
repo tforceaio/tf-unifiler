@@ -110,10 +110,10 @@ func defaultConfig() *koanf.Koanf {
 
 // Override existing values in Koanf instance with value from environtment variables.
 func configFromEnv(k *koanf.Koanf) (*koanf.Koanf, error) {
-	err := k.Load(env.Provider("UNIFILER_", ".", func(s string) string {
+	err := k.Load(env.Provider("TFUNIFILER_", ".", func(s string) string {
 		return strings.Replace(
 			strings.ToLower(
-				strings.TrimPrefix(s, "UNIFILER_")), "_", ".", -1)
+				strings.TrimPrefix(s, "TFUNIFILER_")), "_", ".", -1)
 	}), nil)
 	if err != nil {
 		return k, err
