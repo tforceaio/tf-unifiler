@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
+	"github.com/tforce-io/tf-golib-extra/tftea-v2"
 	"github.com/tforce-io/tf-golib/opx"
 	"github.com/tforce-io/tf-golib/opx/slicext"
 	"github.com/tforce-io/tf-golib/strfmt"
@@ -216,8 +218,19 @@ func (m *MetadataModule) Scan(workspaceDir string, inputs, collections []string,
 		return err
 	}
 	if len(collections) == 0 {
-		return errors.New("collections is empty")
+		input, err := tftea.NewPrompt().
+			WithLabel("Enter collections name (comma separated):").
+			Run()
+		if err == nil {
+			collections = strings.Split(input, ",")
+		} else {
+			return errors.New("collections is empty")
+		}
 	}
+	for i, _ := range collections {
+		collections[i] = strings.TrimSpace(collections[i])
+	}
+
 	m.logger.Info().
 		Strs("collections", collections).
 		Bool("delete", delete).
