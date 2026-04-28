@@ -123,14 +123,11 @@ func (n BubbleteaNotifier) OnProgress(pid string, cur, total uint64) {
 		i.itemPercent = -1
 	}
 	if i.itemTotal > 0 {
-		finished := i.itemFinished
-		totalPercent := (float64(finished) + i.itemPercent) / float64(i.itemTotal)
+		totalPercent := (float64(i.itemFinished) + i.itemPercent) / float64(i.itemTotal)
 		if totalPercent > 1 {
 			totalPercent = 1
 		}
 		i.totalPercent = totalPercent
-	} else {
-		i.totalPercent = -1
 	}
 	n.dispatch()
 	i.mu.Unlock()
@@ -145,9 +142,13 @@ func (n BubbleteaNotifier) OnFinish(_ string, _ time.Duration) {
 	i.itemPercent = 1.0
 	i.itemFinished++
 	if i.itemTotal > 0 {
-		i.totalPercent = 1.0
+		totalPercent := float64(i.itemFinished) / float64(i.itemTotal)
+		if totalPercent > 1 {
+			totalPercent = 1
+		}
+		i.totalPercent = totalPercent
 	} else {
-		i.totalPercent = 1.0
+		i.totalPercent = 1
 	}
 	n.dispatch()
 	i.mu.Unlock()
@@ -169,11 +170,12 @@ func (bn *BubbleteaNotifier) dispatch() {
 	errsCopy := make([]string, len(i.errors))
 	copy(errsCopy, i.errors)
 	msg := ProcessStatusMsg{
-		action:       i.action,
-		item:         i.item,
-		itemPercent:  i.itemPercent,
-		totalPercent: i.totalPercent,
-		errors:       errsCopy,
+		action:         i.action,
+		item:           i.item,
+		itemPercent:    i.itemPercent,
+		totalInfinited: i.itemTotal <= 0,
+		totalPercent:   i.totalPercent,
+		errors:         errsCopy,
 	}
 	i.teaProgram.Send(msg)
 }

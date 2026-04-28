@@ -44,20 +44,22 @@ var (
 
 // ProcessStatusMsg is used for updating state of ProcessStatus component.
 type ProcessStatusMsg struct {
-	action       string
-	item         string
-	itemPercent  float64
-	totalPercent float64
-	errors       []string
+	action         string
+	item           string
+	itemPercent    float64
+	totalInfinited bool
+	totalPercent   float64
+	errors         []string
 }
 
 // ProcessStatus is the Bubble Tea component that renders the 4-line progress UI.
 type ProcessStatus struct {
-	action       string
-	item         string
-	itemPercent  float64
-	totalPercent float64
-	errors       []string
+	action         string
+	item           string
+	itemPercent    float64
+	totalPercent   float64
+	totalInfinited bool
+	errors         []string
 
 	itemProgress  progress.Model
 	itemSpinner   spinner.Model
@@ -138,6 +140,7 @@ func (m ProcessStatus) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.action = msg.action
 		m.item = msg.item
 		m.itemPercent = msg.itemPercent
+		m.totalInfinited = msg.totalInfinited
 		m.totalPercent = msg.totalPercent
 		m.errors = msg.errors
 
@@ -170,10 +173,14 @@ func (m ProcessStatus) View() tea.View {
 	sb.WriteString(fmt.Sprintf("%s%s\n", styleLabel.Render("Action: "), styleAction.Render(opx.Ternary(m.action == "", "-", m.action))))
 	sb.WriteString(fmt.Sprintf("%s%s\n", styleLabel.Render("Item:   "), styleItem.Render(opx.Ternary(m.item == "", "-", m.item))))
 	sb.WriteString(fmt.Sprintf("%s%s\n", styleLabel.Render(""), m.itemProgress.ViewAs(m.itemPercent)))
-	if m.totalPercent >= 0 {
-		sb.WriteString(fmt.Sprintf("%s%s\n", styleLabel.Render(""), m.totalProgress.ViewAs(m.totalPercent)))
+	if m.totalInfinited {
+		if m.totalPercent >= 1 {
+			sb.WriteString(fmt.Sprintf("%s\n", styleLabel.Render("Done.")))
+		} else {
+			sb.WriteString(fmt.Sprintf("%s%s\n", "Please wait", m.itemSpinner.View()))
+		}
 	} else {
-		sb.WriteString(fmt.Sprintf("%s%s\n", "Processing", m.itemSpinner.View()))
+		sb.WriteString(fmt.Sprintf("%s%s\n", styleLabel.Render(""), m.totalProgress.ViewAs(m.totalPercent)))
 	}
 
 	// Errors
