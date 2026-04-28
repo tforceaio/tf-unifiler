@@ -25,7 +25,6 @@ import (
 	"strconv"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/tforce-io/tf-golib/opx"
 	"github.com/tforceaio/tf-unifiler/config"
@@ -33,6 +32,7 @@ import (
 	"github.com/tforceaio/tf-unifiler/filesys"
 	"github.com/tforceaio/tf-unifiler/filesys/exec"
 	"github.com/tforceaio/tf-unifiler/internal/nullable"
+	"github.com/tforceaio/tf-unifiler/tui"
 )
 
 // VideoModule handles user requests related to batch processing video files.
@@ -103,81 +103,28 @@ func (m *VideoModule) ExtractFrames(file string, interval, offset, limit float64
 		Str("file", file).
 		Floats64("interval/offset/limit", []float64{interval, offset, limit}).
 		Str("output", outputDir).
-		Msg("Taking screenshot for video file.")
+		Msg("Extracting frames for video file.")
 
 	inputFile, _ := filesys.CreateEntry(file)
 	outputRoot := opx.Ternary(outputDir == "", path.Dir(inputFile.AbsolutePath), outputDir)
 	if filesys.IsFileExist(outputRoot) {
 		return errors.New("a file with same name with target root existed")
 	}
-	miOptions := &exec.MediaInfoOptions{
-		InputFile:    inputFile.AbsolutePath,
-		OutputFormat: "JSON",
-	}
-	stdout, err := exec.Run(m.cfg.Path.MediaInfoPath, exec.NewMediaInfoArgs(miOptions))
+
+	count, err := m.extractFrames(inputFile, outputRoot, interval, offset, limit, quality)
 	if err != nil {
 		return err
 	}
-	fileMI, _ := exec.DecodeMediaInfoJson(stdout)
-
-	duration, err := strconv.ParseFloat(fileMI.Media.GeneralTracks[0].Duration, 64)
-	if err != nil {
-		m.logger.Warn().Msg("Invalid video file duration.")
-		return err
-	}
-	limitF64 := opx.Ternary(limit == 0, duration, math.Min(duration, limit))
-	limitMs := big.NewInt(int64(limitF64 * float64(1000)))
-
-	if !filesys.IsDirectoryExist(outputRoot) {
-		err = filesys.CreateDirectoryRecursive(outputRoot)
-		if err != nil {
-			return err
-		}
-	}
-
-	isHDR := fileMI.Media.VideoTracks[0].HDRFormat != ""
-	// Convert from BT2020 HDR to BT709 using ffmpeg
-	// Reference https://web.archive.org/web/20190722004804/https://stevens.li/guides/video/converting-hdr-to-sdr-with-ffmpeg/
-	vfHDR := "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p"
-	if isHDR {
-		m.logger.Info().Str("param", vfHDR).Msg("The video is HDR, Unifiler will attempt to apply colorspace conversion.")
-	}
-	offsetDef, intervalDef := m.DefaultScreenshotParameter(limitMs)
-	offsetMs := opx.Ternary(offset == 0, offsetDef, big.NewInt(int64(offset*1000)))
-	intervalMs := opx.Ternary(interval == 0, intervalDef, big.NewInt(int64(interval*1000)))
-	qualityFactor := opx.Ternary(quality == 0, 1, quality)
-	outputFilenameFormat := opx.Ternary(quality == 1, path.Join(outputRoot, inputFile.Name+"_%s"+".jpg"), path.Join(outputRoot, inputFile.Name+"_%s_q%d"+".jpg"))
-	for t := offsetMs; t.Cmp(limitMs) <= 0; t = new(big.Int).Add(t, intervalMs) {
-		outFile := opx.Ternary(quality == 1, fmt.Sprintf(outputFilenameFormat, m.ConvertSecondToTimeCode(t)), fmt.Sprintf(outputFilenameFormat, m.ConvertSecondToTimeCode(t), quality))
-		ffmOptions := &exec.FFmpegArgsOptions{
-			InputFile:      inputFile.AbsolutePath,
-			InputStartTime: nullable.FromInt(int(t.Int64()) / 1000),
-
-			OutputFile:       outFile,
-			OutputFrameCount: nullable.FromInt(1),
-			QualityFactor:    nullable.FromInt(qualityFactor),
-			OverwiteOutput:   true,
-		}
-		if isHDR {
-			ffmOptions.VideoFilter = vfHDR
-		}
-
-		_, err := exec.Run(m.cfg.Path.FFMpegPath, exec.NewFFmpegArgs(ffmOptions))
-		if err != nil {
-			m.logger.Info().Msg("Failed to take video screenshot.")
-			return err
-		}
-		log.Info().
-			Float64("time", float64(t.Int64())/float64(1000)).
-			Str("output", outFile).
-			Msg("Created screenshot.")
-	}
-
+	m.logger.Info().
+		Uint64("count", count).
+		Str("file", file).
+		Str("output", outputDir).
+		Msg("Extracted frames for video file.")
 	return nil
 }
 
 // Return timecode string from timeMs in miliseconds.
-func (m *VideoModule) ConvertSecondToTimeCode(timeMs *big.Int) string {
+func (m *VideoModule) convertSecondToTimeCode(timeMs *big.Int) string {
 	hr := new(big.Int).Div(timeMs, big.NewInt(3600000))
 	timeMs = new(big.Int).Mod(timeMs, big.NewInt(3600000))
 	mm := new(big.Int).Div(timeMs, big.NewInt(60000))
@@ -189,7 +136,7 @@ func (m *VideoModule) ConvertSecondToTimeCode(timeMs *big.Int) string {
 }
 
 // Return offset/interval paramteters for video with lengthMs in miliseconds.
-func (m *VideoModule) DefaultScreenshotParameter(lengthMs *big.Int) (*big.Int, *big.Int) {
+func (m *VideoModule) defaultScreenshotParameter(lengthMs *big.Int) (*big.Int, *big.Int) {
 	defaults := []struct {
 		duration *big.Int
 		offset   *big.Int
@@ -207,6 +154,81 @@ func (m *VideoModule) DefaultScreenshotParameter(lengthMs *big.Int) (*big.Int, *
 		}
 	}
 	return big.NewInt(3400), big.NewInt(17100) // 631 -> max
+}
+
+func (m *VideoModule) extractFrames(inputFile *filesys.FsEntry, outputRoot string, interval, offset, limit float64, quality int) (uint64, error) {
+	miOptions := &exec.MediaInfoOptions{
+		InputFile:    inputFile.AbsolutePath,
+		OutputFormat: "JSON",
+	}
+	stdout, err := exec.Run(m.cfg.Path.MediaInfoPath, exec.NewMediaInfoArgs(miOptions))
+	if err != nil {
+		return 0, err
+	}
+	fileMI, _ := exec.DecodeMediaInfoJson(stdout)
+
+	duration, err := strconv.ParseFloat(fileMI.Media.GeneralTracks[0].Duration, 64)
+	if err != nil {
+		m.logger.Warn().Msg("Invalid video file duration.")
+		return 0, err
+	}
+	limitF64 := opx.Ternary(limit == 0, duration, math.Min(duration, limit))
+	limitMs := big.NewInt(int64(limitF64 * float64(1000)))
+
+	if !filesys.IsDirectoryExist(outputRoot) {
+		err = filesys.CreateDirectoryRecursive(outputRoot)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	isHDR := fileMI.Media.VideoTracks[0].HDRFormat != ""
+	// Convert from BT2020 HDR to BT709 using ffmpeg
+	// Reference https://web.archive.org/web/20190722004804/https://stevens.li/guides/video/converting-hdr-to-sdr-with-ffmpeg/
+	vfHDR := "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p"
+	if isHDR {
+		m.logger.Info().Str("param", vfHDR).Msg("The video is HDR, Unifiler will attempt to apply colorspace conversion.")
+	}
+	offsetDef, intervalDef := m.defaultScreenshotParameter(limitMs)
+	offsetMs := opx.Ternary(offset == 0, offsetDef, big.NewInt(int64(offset*1000)))
+	intervalMs := opx.Ternary(interval == 0, intervalDef, big.NewInt(int64(interval*1000)))
+
+	if n, ok := m.notifier.(*tui.BubbleteaNotifier); ok {
+		ps := tui.RunProcessStatus(n)
+		defer ps.Stop()
+	}
+
+	p := diag.NewProgressTracker("Extract frames", m.notifier)
+	defer p.Done()
+	p.Total(limitMs.Int64())
+	qualityFactor := opx.Ternary(quality == 0, 1, quality)
+	outputFilenameFormat := opx.Ternary(quality == 1, path.Join(outputRoot, inputFile.Name+"_%s"+".jpg"), path.Join(outputRoot, inputFile.Name+"_%s_q%d"+".jpg"))
+	count := uint64(0)
+	for t := offsetMs; t.Cmp(limitMs) <= 0; t = new(big.Int).Add(t, intervalMs) {
+		outFile := opx.Ternary(quality == 1, fmt.Sprintf(outputFilenameFormat, m.convertSecondToTimeCode(t)), fmt.Sprintf(outputFilenameFormat, m.convertSecondToTimeCode(t), quality))
+		ffmOptions := &exec.FFmpegArgsOptions{
+			InputFile:      inputFile.AbsolutePath,
+			InputStartTime: nullable.FromInt(int(t.Int64()) / 1000),
+
+			OutputFile:       outFile,
+			OutputFrameCount: nullable.FromInt(1),
+			QualityFactor:    nullable.FromInt(qualityFactor),
+			OverwiteOutput:   true,
+		}
+		if isHDR {
+			ffmOptions.VideoFilter = vfHDR
+		}
+
+		_, err := exec.Run(m.cfg.Path.FFMpegPath, exec.NewFFmpegArgs(ffmOptions))
+		if err != nil {
+			m.logger.Info().Msg("Failed to take video screenshot.")
+			return 0, err
+		}
+		p.Progress(t.Int64())
+		p.Status(outFile)
+		count++
+	}
+	return count, nil
 }
 
 // Decorator to log error occurred when calling handlers.
