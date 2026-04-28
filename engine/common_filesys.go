@@ -44,7 +44,13 @@ func listAndHashFiles(inputs []string, algorithms []string, recursive bool, noti
 	if n, ok := notifier.(*tui.BubbleteaNotifier); ok {
 		ps := tui.RunProcessStatus(n)
 		defer ps.Stop()
-		n.SetTotal(uint64(len(contents)))
+		total := uint64(len(contents))
+		for _, c := range contents {
+			if c.IsDir {
+				total--
+			}
+		}
+		n.SetTotal(total)
 	}
 
 	var results []*fileHashResult
