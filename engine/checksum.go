@@ -73,9 +73,19 @@ func (m *ChecksumModule) Create(inputs []string, outDir string, algorithms []str
 
 	outDirAbs, _ := filepath.Abs(outDir)
 	baseName := "checksum"
+	isSingleFileInput := func(inps []string) bool {
+		if len(inps) != 1 {
+			return false
+		}
+		isFile, err := filesys.IsFile(inps[0])
+		if err != nil {
+			return false
+		}
+		return isFile
+	}
 	if outputName != "" {
 		baseName = outputName
-	} else if len(inputs) == 1 {
+	} else if isSingleFileInput(inputs) {
 		if name := strings.TrimSuffix(filepath.Base(inputs[0]), filepath.Ext(inputs[0])); name != "" && name != "." {
 			baseName = name
 		}
