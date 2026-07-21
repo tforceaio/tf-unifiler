@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -29,7 +28,7 @@ import (
 )
 
 var majorVersion = 0
-var minorVersion = 6
+var minorVersion = 7
 var patchVersion = 0
 var gitCommit, gitDate, gitBranch string
 
@@ -38,23 +37,12 @@ func version() string {
 	gitDate2, err := time.Parse("20060102", gitDate)
 	buildDate := opx.Ternary(err == nil, gitDate2, time.Now().UTC())
 	duration := buildDate.Sub(originDate)
-	minor := minorVersion
+	minor := strconv.Itoa(minorVersion)
 	patch := strconv.Itoa(patchVersion)
-	if gitBranch == "master" {
-		// do nothing
-	} else if gitBranch == "release" {
-		minor += 1
-		patch = patch + "-rc"
-	} else if strings.Contains(gitBranch, "feat/") {
-		minor += 1
-		patch = patch + "-dev"
-	} else {
-		patch = strconv.Itoa(patchVersion+1) + "-dev"
-	}
 	if gitCommit != "" && len(gitCommit) >= 8 {
-		return fmt.Sprintf("%d.%d.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit[:8])
+		return fmt.Sprintf("%d.%s.%s.%d-%s", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000), gitCommit[:8])
 	}
-	return fmt.Sprintf("%d.%d.%s.%d", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000))
+	return fmt.Sprintf("%d.%s.%s.%d", majorVersion, minor, patch, duration.Milliseconds()/int64(86400000))
 }
 
 // Initialize configurations, loggings for internal modules, and display basic
