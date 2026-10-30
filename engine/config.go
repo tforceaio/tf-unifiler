@@ -17,6 +17,7 @@ package engine
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -34,6 +35,7 @@ import (
 type ConfigModule struct {
 	cfg    *config.RootConfig
 	logger zerolog.Logger
+	out    io.Writer
 }
 
 // Return new ConfigModule instance.
@@ -41,6 +43,7 @@ func NewConfigModule(c *Controller) *ConfigModule {
 	return &ConfigModule{
 		cfg:    c.Config,
 		logger: c.ModuleLogger("config"),
+		out:    c.Out,
 	}
 }
 
@@ -71,7 +74,7 @@ func (m *ConfigModule) Export(outputPath string, diffOnly bool) error {
 		return err
 	}
 	if outputPath == "" {
-		fmt.Print(string(data))
+		fmt.Fprint(m.out, string(data))
 	} else {
 		err := m.writeFile(outputPath, data)
 		if err != nil {
@@ -96,7 +99,7 @@ func (m *ConfigModule) Get(key string) error {
 	}
 
 	if val := k.Get(key); val != nil {
-		fmt.Printf("%v\n", val)
+		fmt.Fprintf(m.out, "%v\n", val)
 	}
 	return nil
 }
@@ -137,10 +140,7 @@ func (m *ConfigModule) Set(key, value string) error {
 
 // Decorator to log error occurred when calling handlers.
 func (m *ConfigModule) logError(err error) error {
-	if err != nil {
-		m.logger.Err(err).Msg("Unexpected error has occurred.")
-	}
-	return err
+	return LogCommandError(m.logger, err)
 }
 
 // Write data to a file safely.
@@ -170,7 +170,7 @@ func ConfigCmd() *cobra.Command {
 		Use:   "export",
 		Short: "Export active configuration to stdout or file.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := InitApp()
+			c := InitAppWithBanner(cmd.Context())
 			defer c.Close()
 			m := NewConfigModule(c)
 			f := m.ParseConfigFlags(cmd, args)
@@ -184,7 +184,7 @@ func ConfigCmd() *cobra.Command {
 		Use:   "get [key]",
 		Short: "Get the active value of a configuration key.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := NewController(true)
+			c := InitApp(cmd.Context())
 			defer c.Close()
 			m := NewConfigModule(c)
 			f := m.ParseConfigFlags(cmd, args)
@@ -197,7 +197,7 @@ func ConfigCmd() *cobra.Command {
 		Use:   "set <key> [value]",
 		Short: "Set a configuration value in the active YAML file.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c := NewController(true)
+			c := InitApp(cmd.Context())
 			defer c.Close()
 			m := NewConfigModule(c)
 			f := m.ParseConfigFlags(cmd, args)

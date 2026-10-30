@@ -19,7 +19,8 @@ package config
 type RootConfig struct {
 	ConfigDir  string        `koanf:"-"`
 	ConfigFile string        `koanf:"-"`
-	IsPortable bool          `koanf:"-"`
+	Portable   bool          `koanf:"-"`
+	Debug      bool          `koanf:"debug"`
 	Logger     *LoggerConfig `koanf:"log"`
 	Path       *PathConfig   `koanf:"paths"`
 	Server     *ServerConfig `koanf:"server"`
@@ -27,7 +28,8 @@ type RootConfig struct {
 
 // HTTPConfig contains configurations for HTTP server connection.
 type HTTPConfig struct {
-	Port int `koanf:"port"`
+	Hostname string `koanf:"hostname"`
+	Port     int    `koanf:"port"`
 }
 
 // LoggerConfig contains configurations for logging.
@@ -48,5 +50,10 @@ type PathConfig struct {
 
 // ServerConfig contains configurations for HTTP server.
 type ServerConfig struct {
-	HTTP *HTTPConfig `koanf:"http"`
+	Name        string      `koanf:"name"`
+	HTTP        *HTTPConfig `koanf:"http"`
+	Autostart   bool        `koanf:"autostart"`
+	APIKey      string      `koanf:"apikey"`
+	Concurrency int         `koanf:"concurrency"`
+	Backlog     int         `koanf:"backlog"`
 }
